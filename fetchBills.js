@@ -7,8 +7,10 @@ const URL_BASE = "https://api.congress.gov/v3/bill";
 const BATCH_SIZE = 250;
 const MAX_BILLS = 1000;
 
-async function fetchBatch(offset) {
-    console.log(`New batch: ${offset}`);
+
+async function fetchBatch(offset)
+{
+    console.log(`Started fetching batch ${offset} - ${offset + BATCH_SIZE}`);
     try {
         const params = {
             api_key: API_KEY,
@@ -22,21 +24,33 @@ async function fetchBatch(offset) {
             number: bill.number
         })) || [];
     } catch (error) {
-        console.error(`Error fetching data at offest ${offset}:`, error.message);
+        console.error("Error fetching data:", error.message);
         return [];
     }
 }
 
-async function fetch()
+
+async function fetchBills()
 {
     const bills = new Set();
     for (let i = 0; i < MAX_BILLS; i += BATCH_SIZE) {
         let batch = await fetchBatch(i);
         batch.forEach(bill => {bills.add(JSON.stringify(bill))});
     }
-    const uniqueBills = [...bills].map(bill => JSON.parse(bill));
-    console.log("Fetched bills:");
-    console.log(uniqueBills);
+    console.log(`Finished fetching ${MAX_BILLS} bills`);
+    return [...bills].map(bill => JSON.parse(bill));
 }
 
-fetch();
+
+async function main()
+{
+    console.log(await fetchBills())
+}
+
+
+if (require.main === module) {
+    main();
+}
+
+
+module.exports = fetchBills;
