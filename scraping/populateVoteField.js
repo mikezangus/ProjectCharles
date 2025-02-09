@@ -11,7 +11,7 @@ const schema = {
 };
 
 
-module.exports = function populateVoteRecord()
+module.exports = function populateVoteField()
 {
     return new Proxy({ ...schema }, {
         set(target, prop, value) {
