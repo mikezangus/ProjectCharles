@@ -28,7 +28,7 @@ def connect_to_db(config: Dict[str, Any]) -> MySQLConnection:
         host=config["SQL_HOST_NAME"],
         user=config["SQL_USER_NAME"],
         password=config["SQL_PASSWORD"],
-        database="MembersDB"
+        database="DB"
     )
 
 

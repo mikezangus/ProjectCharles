@@ -1,4 +1,8 @@
 node_modules/
+__pycache__/
+reference/
 
 .DS_Store
 config*
+test*
+package*
