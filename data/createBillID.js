@@ -1,26 +1,33 @@
 module.exports = function (congress, type, num)
 {
     if (!congress || !type || !num) {
-        throw new Error(
-            `\n${__filename}\nError | Missing param(s):\n` +
-            `congress=${congress} type=${type} num=${num}`
-        );
+        console.error(`
+            ${__filename}
+            Error | Missing param(s): congress=${congress} type=${type} num=${num}
+        `);
+        return null;
     }
     if (!/^\d{1,3}$/.test(String(congress))) {
-        throw new Error(
-            `\n${__filename}\nError | Invalid value: congress=${congress}`
-        );
+        console.error(`
+            ${__filename}
+            Error | Invalid value: congress=${congress}
+        `);
+        return null;
     }
     if (type !== "HR" && type !== "HJRES" && type !== "HCONRES" && type !== "HRES"
         && type !== 'S' && type !== "SJRES" && type !== "SCONRES" && type !== "SRES") {
-        throw new Error (
-            `\n${__filename}\nError | Invalid value: type=${type}`
-        );
+        console.error(`
+            ${__filename}
+            Error | Invalid value: type=${type}
+        `);
+        return null;
     }
     if (!/^\d+$/.test(String(num))) {
-        throw new Error(
-            `\n${__filename}\nError | Invalid value: num=${num}`
-        );
+        console.error(`
+            ${__filename}
+            Error | Invalid value: num=${num}
+        `);
+        return null;
     }
     return `${congress}${type}${num}`;
 }
