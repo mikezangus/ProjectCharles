@@ -1,5 +1,4 @@
-const sql = require("mysql2/promise");
-const pool = require("../db");
+const db = require("../../db");
 
 
 async function createTable(connection)
@@ -20,24 +19,23 @@ async function createTable(connection)
     try {
         await connection.execute(query);
     } catch (error) {
-        console.error(`
-            ${__filename}
-            Error in createTable() | ${error}
-        `);
+        console.error(`${__filename}\nError in createTable() | ${error}`);
     }
 }
 
 
-async function insertRecords(connection, records)
+async function insert(connection, records)
 {
     const query = `
         INSERT IGNORE INTO Bills
         (bill_id, congress, type, bill_num, vote, h_vote_num, h_year, s_vote_num, s_session)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-    `
+    `;
+    let affectedRows = 0;
+    let ignoredRecords = [];
     for (const record of records) {
         try {
-            await connection.execute(query, [
+            const [result] = await connection.execute(query, [
                 record.bill_id,
                 record.congress,
                 record.type,
@@ -48,22 +46,30 @@ async function insertRecords(connection, records)
                 record.s_vote_num,
                 record.s_session
             ]);
+            result.affectedRows > 0
+                ? affectedRows++
+                : ignoredRecords.push(record.bill_id); 
         } catch (error) {
-            console.error(`
-                ${__filename}
-                Error in insertRecords() | ${error}
-            `);
+            console.error(`${__filename}\nError in insert() | ${error}`);
+
         }
     }
+    console.log("\nFinished inserting record(s):");
+    console.log(`  Inserted: ${affectedRows}`);
+    console.log(`  Ignored:  ${ignoredRecords.length}  |  ${ignoredRecords.slice(0, 10)}...`);
 }
 
 
 async function main(records)
 {
-    const connection = await pool.getConnection();
-    await createTable(connection);
-    await insertRecords(connection, records);
-    connection.release();
+    console.log("\nStarted inserting records:\n", records.slice(0, 10));
+    const connection = await db.getConnection()
+    try {
+        await createTable(connection);
+        await insert(connection, records);
+    } finally {
+        connection.release();
+    }
 }
 
 
