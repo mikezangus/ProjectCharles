@@ -2,11 +2,13 @@ import json
 import os
 
 
-JSON_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                         "output.json")
+OUTPUT_FILE_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 
+    "output.json"
+)
 
 
-def find_field_lengths(file_path):
+def get_maxlens(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
         data = json.load(file)
     max_lengths = {}
@@ -21,10 +23,10 @@ def find_field_lengths(file_path):
 
 
 def main():
-    if not os.path.exists(JSON_FILE):
-        print(f"Error: File {JSON_FILE} not found")
+    if not os.path.exists(OUTPUT_FILE_PATH):
+        print(f"Error: File {OUTPUT_FILE_PATH} not found")
         return
-    lengths = find_field_lengths(JSON_FILE)
+    lengths = get_maxlens(OUTPUT_FILE_PATH)
     print("\nMax Field Lengths:")
     for field, length in lengths.items():
         print(f"{field}: {length}")
