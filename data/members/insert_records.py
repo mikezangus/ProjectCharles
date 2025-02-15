@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 from schema import Record
 
 
-CONFIG_PATH: str = os.path.join(
+CONFIG_PATH = os.path.join(
     os.path.dirname(
         os.path.dirname(
             os.path.dirname(
