@@ -1,9 +1,8 @@
 const axios = require("axios");
 const { CONGRESS_API_KEY: API_KEY } = require("../../../config.json");
-const createRecord = require("../../createRecord");
-const schema = require("../schema");
-const createBillID = require("../../createBillID");
 const c2y = require("../../congresses-years.json");
+const populate = require("./populate");
+const printError = require("../../printError");
 
 
 const BATCH_SIZE = 250;
@@ -31,45 +30,22 @@ async function scrapeBatch(offset, targetCongress)
             bill => bill.congress === targetCongress
         );
     } catch (error) {
-        console.error(`\n${__filename}\nError on fetchResponse |`, error.message);
+        printError(__filename, "scrapeBatch()", error);
         return [];
     }
 }
 
 
-function populateRecord(record)
+module.exports = async function (targetCongress)
 {
-    const r = createRecord(schema);
-    if (!(r.bill_id = createBillID(record.congress,
-                                   record.type,
-                                   record.number))) return null;
-    r.congress = record.congress;
-    r.type = record.type;
-    r.bill_num = record.number;
-    return r;
-}
-
-
-async function main(targetCongress)
-{
-    const records = [];
+    const rows = [];
     let offset = START_OFFSET;
     while (true) {
         const batch = await scrapeBatch(offset, targetCongress);
         if (batch.length === 0) break;
-        records.push(...batch.map(populateRecord));
+        rows.push(...batch.map(populate));
         offset += BATCH_SIZE;
     }
-    console.log(`\nFinished scraping ${records.length} records for Congress ${targetCongress}\n`);
-    return records;
+    console.log(`\nFinished scraping ${rows.length} records for Congress ${targetCongress}\n`);
+    return rows;
 }
-
-
-if (require.main === module) {
-    (async () => {
-        return await main(118);
-    })();
-}
-
-
-module.exports = main;

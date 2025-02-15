@@ -1,4 +1,5 @@
 const db = require("../../db");
+const printError = require("../../printError");
 
 
 async function createTable(connection)
@@ -9,7 +10,6 @@ async function createTable(connection)
             congress TINYINT,
             type VARCHAR(7),
             bill_num VARCHAR(5),
-            vote CHAR(1),
             h_vote_num VARCHAR(5),
             h_year SMALLINT,
             s_vote_num VARCHAR(5),
@@ -19,58 +19,49 @@ async function createTable(connection)
     try {
         await connection.execute(query);
     } catch (error) {
-        console.error(`${__filename}\nError in createTable() | ${error}`);
+        printError(__filename, "createTable()", error);
     }
 }
 
 
-async function insert(connection, records)
+async function insert(rows, connection)
 {
     const query = `
         INSERT IGNORE INTO Bills
-        (bill_id, congress, type, bill_num, vote, h_vote_num, h_year, s_vote_num, s_session)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+        (bill_id, congress, type, bill_num, h_vote_num, h_year, s_vote_num, s_session)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
     `;
-    let affectedRows = 0;
-    let ignoredRecords = [];
-    for (const record of records) {
+    let affectedCount = 0;
+    let ignoredCount = 0;
+    for (const row of rows) {
         try {
             const [result] = await connection.execute(query, [
-                record.bill_id,
-                record.congress,
-                record.type,
-                record.bill_num,
-                record.vote,
-                record.h_vote_num,
-                record.h_year,
-                record.s_vote_num,
-                record.s_session
+                row.bill_id,
+                row.congress,
+                row.type,
+                row.bill_num,
+                row.h_vote_num,
+                row.h_year,
+                row.s_vote_num,
+                row.s_session
             ]);
-            result.affectedRows > 0
-                ? affectedRows++
-                : ignoredRecords.push(record.bill_id); 
+            result.affectedRows > 0 ? affectedCount++ : ignoredCount++; 
         } catch (error) {
-            console.error(`${__filename}\nError in insert() | ${error}`);
-
+            printError(__filename, "insert()", error);
         }
     }
-    console.log("\nFinished inserting record(s):");
-    console.log(`  Inserted: ${affectedRows}`);
-    console.log(`  Ignored:  ${ignoredRecords.length}  |  ${ignoredRecords.slice(0, 10)}...`);
+    console.log(`\nFinished inserting ${affectedCount} rows. Ignored ${ignoredCount} rows`);
 }
 
 
-async function main(records)
+module.exports = async function (rows)
 {
     console.log("\nStarted inserting records:\n", records.slice(0, 10));
     const connection = await db.getConnection()
     try {
         await createTable(connection);
-        await insert(connection, records);
+        await insert(records, connection);
     } finally {
-        connection.release();
+        db.end();
     }
 }
-
-
-module.exports = main;
