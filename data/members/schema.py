@@ -1,13 +1,16 @@
+schema = [
+    "bio_id",
+    "congress",
+    "chamber",
+    "state",
+    "last_name",
+    "first_name",
+    "party"
+]
+
+
 class Record:
-    __slots__ = (
-        "bio_id",
-        "last_name",
-        "first_name",
-        "state",
-        "party",
-        "congress",
-        "chamber"
-    )
+    __slots__ = schema
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             if key not in self.__slots__:
@@ -16,4 +19,4 @@ class Record:
                     Error | Invalid field: {key}
                     Valid fields: {', '.join(self.__slots__)}
                 """)
-            super().__setattr__(key, value)
+            setattr(self, key, value)

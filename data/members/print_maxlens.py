@@ -26,10 +26,10 @@ def main():
     if not os.path.exists(OUTPUT_FILE_PATH):
         print(f"Error: File {OUTPUT_FILE_PATH} not found")
         return
-    lengths = get_maxlens(OUTPUT_FILE_PATH)
+    lens = get_maxlens(OUTPUT_FILE_PATH)
     print("\nMax Field Lengths:")
-    for field, length in lengths.items():
-        print(f"{field}: {length}")
+    for field, len in lens.items():
+        print(f"{field}: {len}")
 
 
 if __name__ == "__main__":

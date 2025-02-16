@@ -1,8 +1,8 @@
 import glob
 import json
 import os
-from typing import Any, Dict, List
 from schema import Record
+from typing import Any
 
 
 BIO_DIR = os.path.join(
@@ -11,7 +11,7 @@ BIO_DIR = os.path.join(
 )
 
 
-def parse_file(file: Dict[str, Any]) -> List[Record]:
+def parse_file(file: dict[str, Any]) -> list[Record]:
     file_records = []
     data = file.get("data", file)
     bio_id = data.get("usCongressBioId")
@@ -29,28 +29,28 @@ def parse_file(file: Dict[str, Any]) -> List[Record]:
         )
         if None in (
             bio_id,
+            congress,
+            chamber,
+            state,
             last_name,
             first_name,
-            state,
             party,
-            congress,
-            chamber
         ):
             continue
         record = Record(
             bio_id=bio_id,
+            congress=congress,
+            chamber=chamber,
+            state=state,
             last_name=last_name,
             first_name=first_name,
-            state=state,
-            party=party,
-            congress=congress,
-            chamber=chamber
+            party=party
         )
         file_records.append(record)
     return file_records
     
 
-def main() -> List[Record]:
+def main() -> list[Record]:
     records = []
     for path in glob.glob(os.path.join(BIO_DIR, "*.json")):
         try:

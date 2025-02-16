@@ -1,24 +1,20 @@
 import json
-import os
 import mysql.connector
+import os
 from mysql.connector.connection import MySQLConnection
 from mysql.connector.cursor import MySQLCursor
-from typing import Any, Dict, List
 from schema import Record
+from typing import Any, Dict, List
 
 
-CONFIG_PATH = os.path.join(
-    os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(
-                os.path.abspath(
-                    __file__)))),
-    "config.json"
-)
-TABLE_NAME: str = "Members"
+MEMBERS_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.dirname(MEMBERS_DIR)
+PROJECT_DIR = os.path.dirname(DATA_DIR)
+CONFIG_PATH = os.path.join(PROJECT_DIR, "config.json")
+TABLE_NAME = "Members"
 
 
-def get_config() -> Dict[str, Any]:
+def get_config() -> Dict[str, str]:
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
     
@@ -36,13 +32,13 @@ def create_table(cursor: MySQLCursor) -> None:
     create_table = f"""
     CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
         bio_id VARCHAR(7),
-        last_name VARCHAR(25),
-        first_name VARCHAR(20),
-        state CHAR(2),
-        party VARCHAR(35),
         congress INT,
         chamber CHAR(1),
-        PRIMARY KEY (bio_id, congress, chamber)
+        state CHAR(2),
+        last_name VARCHAR(25),
+        first_name VARCHAR(20),
+        party VARCHAR(35),
+        PRIMARY KEY (bio_id, congress, chamber, state)
     );
     """
     cursor.execute(create_table)
@@ -53,18 +49,18 @@ def insert_records(records: List[Record],
                    db: MySQLConnection) -> None:
     insert = f"""
     INSERT IGNORE INTO {TABLE_NAME}
-    (bio_id, last_name, first_name, state, party, congress, chamber)
+    (bio_id, congress, chamber, state, last_name, first_name, party)
     VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
     values = [
         (
             record.bio_id,
+            record.congress,
+            record.chamber,
+            record.state,
             record.last_name,
             record.first_name,
-            record.state,
-            record.party,
-            record.congress,
-            record.chamber
+            record.party
         )
         for record in records
     ]
@@ -74,8 +70,7 @@ def insert_records(records: List[Record],
 
 def main(records: List[Record]) -> None:
     try:
-        config = get_config()
-        db = connect_to_db(config)
+        db = connect_to_db(get_config())
         cursor = db.cursor()
         create_table(cursor)
         print("Started inserting")
