@@ -1,4 +1,3 @@
-const db = require("../../db");
 const printError = require("../../printError");
 
 
@@ -24,8 +23,9 @@ async function createTable(connection)
 }
 
 
-async function insert(rows, connection)
+module.exports = async function (rows, connection)
 {
+    await createTable(connection);
     const query = `
         INSERT IGNORE INTO Bills
         (bill_id, congress, type, bill_num, h_vote_num, h_year, s_vote_num, s_session)
@@ -33,6 +33,7 @@ async function insert(rows, connection)
     `;
     let affectedCount = 0;
     let ignoredCount = 0;
+    console.log(`\nStarted inserting ${rows.length} rows`);
     for (const row of rows) {
         try {
             const [result] = await connection.execute(query, [
@@ -47,21 +48,8 @@ async function insert(rows, connection)
             ]);
             result.affectedRows > 0 ? affectedCount++ : ignoredCount++; 
         } catch (error) {
-            printError(__filename, "insert()", error);
+            printError(__filename, null, error);
         }
     }
-    console.log(`\nFinished inserting ${affectedCount} rows. Ignored ${ignoredCount} rows`);
-}
-
-
-module.exports = async function (rows)
-{
-    console.log("\nStarted inserting records:\n", records.slice(0, 10));
-    const connection = await db.getConnection()
-    try {
-        await createTable(connection);
-        await insert(records, connection);
-    } finally {
-        db.end();
-    }
+    console.log(`Finished inserting ${affectedCount} rows. Ignored ${ignoredCount} rows\n`);
 }

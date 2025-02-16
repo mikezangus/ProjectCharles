@@ -29,5 +29,4 @@ module.exports = async function (rows, connection)
         }
     }
     console.log(`\nFinished inserting ${affectedCount} rows. Ignored ${ignoredCount} rows`);
-
 }

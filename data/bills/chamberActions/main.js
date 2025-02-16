@@ -1,20 +1,20 @@
 const db = require("../../db");
-const { fetchNullBichameralRows, fetchNullHouseRows, fetchNullSenateRows } = require("./fetch");
 const driver = require("./driver");
+const { fetchNullBichameralRows, fetchNullHouseRows, fetchNullSenateRows } = require("./fetch");
 const y2c = require("../../years-congresses.json");
 
-
-const START_CONGRESS = 118;
-const END_CONGRESS = 119;
 
 const BICHAMERAL = 0;
 const HOUSE = 1;
 const SENATE = 2;
 
+const START_CONGRESS = 94;
+const END_CONGRESS = 119;
+
 
 async function main()
 {
-    const connection = await db.getConnection();
+    const connection = await db;
     const currentCongress = y2c[new Date().getFullYear()];
     for (let congress = START_CONGRESS; congress <= END_CONGRESS; congress++) {
         await driver(
@@ -35,7 +35,7 @@ async function main()
             );
         }
     }
-    await db.end();
+    await connection.end();
     process.exit(0);
 }
 
