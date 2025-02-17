@@ -1,11 +1,13 @@
 const { spawn } = require("child_process");
 const db = require("../../db");
-const insert = require("./insertIntoDB");
 const fetch = require("./fetchBillsFromWeb");
+const getCurrentCongress = require("../../getCurrentCongress");
+const insert = require("./insertIntoDB");
 
 
+const CURRENT_CONGRESS = getCurrentCongress();
 const START_CONGRESS = 95;
-const END_CONGRESS = 119;
+const END_CONGRESS = CURRENT_CONGRESS;
 
 
 async function main()

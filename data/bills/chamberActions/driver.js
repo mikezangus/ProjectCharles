@@ -1,5 +1,5 @@
 const deleteRows = require("./deleteNullChamberRows");
-const fetch = require("./fetchChamberFields");
+const fetch = require("./fetchChamberFieldsFromWeb");
 const insert = require("./insertIntoDB");
 
 
