@@ -11,12 +11,13 @@ module.exports = async function (fetchResponse)
             return await fetchResponse();
         } catch (error) {
             if (error.response && error.response.status === 429) {
-                console.warn(`⏳ Rate limit hit | Attempt [${++attempts}/${maxAttempts}] | Retrying in ${delay / 1000}s`);
+                console.warn(`⏳ [${++attempts}/${maxAttempts}] Trying again in ${delay / 1000}s`);
                 await new Promise(resolve => setTimeout(resolve, delay));
                 delay *= 2;
             } else {
                 printError(__filename, "handleRateLimit()", error);
-                return [];
+                console.warn(`❓ [${++attempts}/${maxAttempts}] Trying again now`);
+                attempts++;
             }
         }
     }
