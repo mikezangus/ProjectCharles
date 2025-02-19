@@ -3,14 +3,14 @@ const createRow = require("../../createRow");
 const schema = require("../schema");
 
 
-module.exports = function (row)
+module.exports = function (src)
 {
-    const row = createRow(schema);
-    if (!(row.bill_id = createBillID(row.congress,
-                                     row.type,
-                                     row.number))) return null;
-    row.congress = row.congress;
-    row.type = row.type;
-    row.bill_num = row.number;
-    return row;
+    const dst = createRow(schema);
+    if (!(dst.bill_id = createBillID(src.congress,
+                                     src.type,
+                                     src.number))) return null;
+    dst.congress = src.congress;
+    dst.type = src.type;
+    dst.bill_num = src.number;
+    return dst;
 }
