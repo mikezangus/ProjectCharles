@@ -10,7 +10,7 @@ async function fetchResponse(congress, type, billNum)
     const url = "https://api.congress.gov/v3/bill/" +
                 `${congress}/${type.toLowerCase()}/${billNum}/` +
                 `actions?api_key=${API_KEY}&format=json&sort=updateDate+desc`;
-    const response = await axios.get(url)
+    const response = await axios.get(url);
     return response.data.actions || [];
 }
 

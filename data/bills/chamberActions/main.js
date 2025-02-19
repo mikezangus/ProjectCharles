@@ -1,4 +1,5 @@
-const db = require("../../db");
+const { spawn } = require("child_process");
+const pool = require("../../db");
 const driver = require("./driver");
 const { fetchNullBichameralRows,
         fetchNullHouseRows,
@@ -11,36 +12,46 @@ const HOUSE = 1;
 const SENATE = 2;
 
 const CURRENT_CONGRESS = getCurrentCongress();
-const START_CONGRESS = 101;
+const START_CONGRESS = 94;
 const END_CONGRESS = CURRENT_CONGRESS;
 
 
 async function main()
 {
-    const connection = await db;
-    for (let congress = START_CONGRESS; congress <= END_CONGRESS; congress++) {
-        await driver(
-            await fetchNullBichameralRows(connection, congress),
-            BICHAMERAL,
-            connection
-        );
-        if (congress === CURRENT_CONGRESS) {
+    const caffeinate = spawn("caffeinate", ["-d", "-i", "-s", "-u"],
+                             { detached: false, stdio: "ignore" });
+    const connection = await pool.getConnection();
+    try {
+        for (let congress = START_CONGRESS; congress <= END_CONGRESS; congress++) {
             await driver(
-                await fetchNullHouseRows(connection, congress),
-                HOUSE,
+                await fetchNullBichameralRows(connection, congress),
+                BICHAMERAL,
                 connection
             );
-            await driver(
-                await fetchNullSenateRows(connection, congress),
-                SENATE,
-                connection
-            );
+            if (congress === CURRENT_CONGRESS) {
+                await driver(
+                    await fetchNullHouseRows(connection, congress),
+                    HOUSE,
+                    connection
+                );
+                await driver(
+                    await fetchNullSenateRows(connection, congress),
+                    SENATE,
+                    connection
+                );
+            }
         }
+    } finally {
+        connection.release();
+        await pool.end();
+        caffeinate.kill("SIGTERM");
     }
-    await connection.end();
 }
 
 
 if (require.main === module) {
-    (async () => { await main() })();
+    (async () => {
+        await main();
+        process.exit(0);
+    })();
 }
