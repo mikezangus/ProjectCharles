@@ -18,7 +18,8 @@ const END_CONGRESS = CURRENT_CONGRESS;
 
 async function main()
 {
-    const caffeinate = spawn("caffeinate", ["-d", "-i", "-s", "-u"],
+    const caffeinate = spawn("caffeinate",
+                             ["-d", "-i", "-s", "-u"],
                              { detached: false, stdio: "ignore" });
     const connection = await pool.getConnection();
     try {

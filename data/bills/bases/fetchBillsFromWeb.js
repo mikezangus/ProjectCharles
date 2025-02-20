@@ -32,7 +32,7 @@ async function fetchResponse(congress, offset)
 
 async function fetchBatch(congress, offset)
 {
-    console.log(`Started scraping for Congress ${congress} [${offset} - ${offset + BATCH_SIZE}]`);
+    console.log(`Started fetching for Congress ${congress} [${offset} - ${offset + BATCH_SIZE}]`);
     const response = await handleRateLimit(
         () => fetchResponse(congress, offset)
     );
@@ -50,6 +50,6 @@ module.exports = async function (congress)
         rows.push(...batch.map(populateFields));
         offset += BATCH_SIZE;
     }
-    console.log(`Finished scraping ${rows.length} records for Congress ${congress}`);
+    console.log(`Finished fetching ${rows.length} records for Congress ${congress}`);
     return rows;
 }
