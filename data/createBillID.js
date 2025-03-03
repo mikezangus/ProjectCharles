@@ -1,21 +1,20 @@
-module.exports = function (congress, type, num)
+function createBillID(congress, type, num)
 {
     if (!congress || !type || !num) {
-        console.error(`${__filename}\nError | Invalid param(s):\ncongress=${congress} type=${type} num=${num}`);
-        return null;
+        throw new Error(`Invalid value(s):\ncongress=${congress} type=${type} num=${num}`)
     }
     if (!/^\d{1,3}$/.test(String(congress))) {
-        console.error(`${__filename}\nError | Invalid value: congress=${congress}`);
-        return null;
+        throw new Error(`Invalid value:\ncongress=${congress}`);
     }
     if (type !== "HR" && type !== "HJRES" && type !== "HCONRES" && type !== "HRES"
         && type !== 'S' && type !== "SJRES" && type !== "SCONRES" && type !== "SRES") {
-        console.error(`${__filename}\nError | Invalid value: type=${type}`);
-        return null;
+        throw new Error(`Invalid value:\ntype=${type}`);
     }
     if (!/^\d+$/.test(String(num))) {
-        console.error(`${__filename}\nError | Invalid value: num=${num}`);
-        return null;
+        throw new Error(`Invalid value:\nnum=${num}`);
     }
     return `${congress}${type}${num}`;
 }
+
+
+module.exports = createBillID;
