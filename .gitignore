@@ -6,3 +6,4 @@ reference/
 config*
 test*
 package*
+*.log

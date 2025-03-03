@@ -1,7 +1,7 @@
 const writeLog = require("./writeLog");
 
 
-async function handleRateLimit(fetchResponse, billID)
+async function handleRateLimit(fetchResponse, id)
 {
     let attempts = 1;
     let delay = 10000;
@@ -24,7 +24,7 @@ async function handleRateLimit(fetchResponse, billID)
         }
     }
     console.error("Maximum attempts hit. Failed to fetch response")
-    writeLog(`Bill: ${billID} | Status: ${status}`);
+    writeLog(`ID: ${id} | Status: ${status}`);
     return [];
 }
 

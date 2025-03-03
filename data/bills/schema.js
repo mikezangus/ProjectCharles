@@ -1,4 +1,4 @@
-module.exports = {
+const schema = {
     bill_id: null,
     congress: null,
     type: null,
@@ -8,3 +8,6 @@ module.exports = {
     s_vote_num: null,
     s_session: null
 };
+
+
+module.exports = schema;

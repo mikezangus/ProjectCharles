@@ -1,7 +1,10 @@
 const y2c = require("./years-congresses.json");
 
 
-module.exports = function ()
+const currentCongress = () =>
 {
     return y2c[String(new Date().getFullYear())];
 }
+
+
+module.exports = currentCongress;
