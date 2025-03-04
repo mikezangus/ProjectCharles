@@ -37,7 +37,7 @@ def create_table(cursor: MySQLCursor) -> None:
         state CHAR(2),
         last_name VARCHAR(25),
         first_name VARCHAR(20),
-        party VARCHAR(35),
+        party CHAR(1),
         PRIMARY KEY (bio_id, congress, chamber, state)
     );
     """
