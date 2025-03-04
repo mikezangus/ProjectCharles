@@ -3,9 +3,10 @@ const writeLog = require("./writeLog");
 
 async function handleRateLimit(fetchResponse, id)
 {
-    let attempts = 1;
+    let attempts = 0;
     let delay = 10000;
     let status = null;
+    let errorMessage = null;
     const maxAttempts = 10;
     while (attempts <= maxAttempts) {
         try {
@@ -17,13 +18,12 @@ async function handleRateLimit(fetchResponse, id)
                 delay *= 2;
             } else {
                 status = error.response.status;
-                console.error(error);
+                errorMessage = error;
                 console.warn(`❓ [${++attempts}/${maxAttempts}] Trying again now`);
-                attempts++;
             }
         }
     }
-    console.error("Maximum attempts hit. Failed to fetch response")
+    console.error(`Maximum attempts hit. Failed to fetch response.\nError:\n${errorMessage}`);
     writeLog(`ID: ${id} | Status: ${status}`);
     return [];
 }

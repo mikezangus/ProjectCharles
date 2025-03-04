@@ -30,13 +30,17 @@ async function insertIntoDB(rows, connection)
     `;
     const len = rows.length;
     try {
-        console.log(`Started inserting ${len} rows into table Votes`);
+        console.log(`\nStarted inserting ${len} rows into Votes table`);
         await createTable(connection);
         let affectedCount = 0;
         for (let i = 0; i < len; i += BATCH_SIZE) {
             const batchEnd = Math.min(i + BATCH_SIZE, len);
-            console.log(`Batch [${i} - ${batchEnd}] out of ${len}`);
-            const batch = rows.slice(i, batchEnd);
+            console.log(`[${i + 1}-${batchEnd}] / ${len}`);
+            const batch = rows
+                .slice(i, batchEnd)
+                .filter(row => 
+                    row && row.bill_id && row.bio_id && row.vote && row.chamber
+                );
             const placeholders = batch.map(() => "(?, ?, ?, ?)").join(", ");
             const values = batch.flatMap(row =>
                 [row.bill_id, row.bio_id, row.vote, row.chamber]
@@ -44,7 +48,7 @@ async function insertIntoDB(rows, connection)
             const [result] = await connection.execute(query(placeholders), values);
             affectedCount += result.affectedRows;
         }
-        console.log(`Finished inserting ${affectedCount} rows into table Votes. Ignored ${len - affectedCount} rows`);
+        console.log(`Finished inserting ${affectedCount} rows into Votes table. Ignored ${len - affectedCount} rows`);
     } catch (error) {
         console.error(error);
         throw error;

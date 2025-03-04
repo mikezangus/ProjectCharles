@@ -16,12 +16,17 @@ async function populateFieldsHouse(voteElements, billID, congress, connection)
             dst.bill_id = billID;
             dst.bio_id = legislator.getAttribute("name-id") || null;
             if (!dst.bio_id) {
-                dst.bio_id = await getBioIdFromDB(connection,
-                                                  'H',
-                                                  congress,
-                                                  legislator);
+                dst.bio_id = await getBioIdFromDB(
+                    connection, 'H', congress, legislator
+                );
             }
-            dst.vote = xpath.select1("string(vote)", vote)?.slice(0, 1) || null;
+            if (!dst.bio_id) {
+                return null;
+            }
+            dst.vote = xpath
+                .select1("string(vote)", vote)
+                ?.slice(0, 1)
+                || null;
             dst.chamber = 'H';
             return dst;
         }));
@@ -39,7 +44,10 @@ async function populateFieldsSenate(voteElements, billID, congress, connection)
             const dst = createRow(schema);
             dst.bill_id = billID;
             dst.bio_id = await getBioIdFromDB(connection, 'S', congress, vote);
-            dst.vote = xpath.select1("string(vote_cast)", vote)?.slice(0, 1) || null;
+            dst.vote = xpath
+                .select1("string(vote_cast)", vote)
+                ?.slice(0, 1)
+                || null;
             dst.chamber = 'S';
             return dst;
         }));

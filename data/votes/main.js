@@ -9,7 +9,7 @@ const pool = require("../db");
 
 
 const START_CONGRESS = 102; // 102 is minimum, no online vote archiving pre-102
-const END_CONGRESS = 118;
+const END_CONGRESS = currentCongress();
 
 
 async function main()
@@ -23,14 +23,13 @@ async function main()
         connection = await pool.getConnection();
         const bills = await fetchBillsFromDB(connection, START_CONGRESS, END_CONGRESS);
         const len = bills.length;
+        console.log(`\nFetched ${len} bills from DB from Congresses ${START_CONGRESS}-${END_CONGRESS}\n`);
         for (const [i, bill] of bills.entries()) {
-            console.log(`[${i}/${len - 1}] ${bill.bill_id}`);
+            console.log(`[${i + 1}/${len}] ${bill.bill_id}`);
             const [hVotesXml, sVotesXml] = await fetchVotesFromWeb(bill);
-            const hVotesElements = hVotesXml
-                ? parseHouseXmlToElements(hVotesXml)
+            const hVotesElements = hVotesXml ? parseHouseXmlToElements(hVotesXml)
                 : [];
-            const sVotesElements = sVotesXml
-                ? parseSenateXmlToElements(sVotesXml)
+            const sVotesElements = sVotesXml ? parseSenateXmlToElements(sVotesXml)
                 : [];
             const hVotes = hVotesElements.length > 0
                 ? await populateFieldsHouse(hVotesElements, bill.bill_id, bill.congress, connection)
