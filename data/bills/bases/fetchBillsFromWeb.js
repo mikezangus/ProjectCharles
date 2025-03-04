@@ -1,8 +1,6 @@
 const axios = require("axios");
 const { CONGRESS_API_KEY: API_KEY } = require("../../../config.json");
-const handleRateLimit = require("../handleRateLimit");
-const populateFields = require("./populateFields");
-const printError = require("../../printError");
+const handleRateLimit = require("../../handleRateLimit");
 
 
 const BATCH_SIZE = 250;
@@ -24,7 +22,7 @@ async function fetchResponse(congress, offset)
         );
         return response ? response.data.bills : [];
     } catch (error) {
-        printError(__filename, "fetchResponse()", error);
+        console.error(error);
         return [];
     }
 }
@@ -33,23 +31,31 @@ async function fetchResponse(congress, offset)
 async function fetchBatch(congress, offset)
 {
     console.log(`Started fetching for Congress ${congress} [${offset} - ${offset + BATCH_SIZE}]`);
-    const response = await handleRateLimit(
-        () => fetchResponse(congress, offset)
-    );
-    return response ? response : [];
+    try {
+        const response = await handleRateLimit(
+            () => fetchResponse(congress, offset),
+            `Congress: ${congress} | Batch: ${offset} - ${BATCH_SIZE}`
+        );
+        return response ? response : [];
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 
-module.exports = async function (congress)
+async function fetchBillsFromWeb(congress)
 {
-    const rows = [];
+    const bills = [];
     let offset = 0;
     while (true) {
         const batch = await fetchBatch(congress, offset);
         if (!batch || batch.length === 0) break;
-        rows.push(...batch.map(populateFields));
+        bills.push(...batch);
         offset += BATCH_SIZE;
     }
-    console.log(`Finished fetching ${rows.length} records for Congress ${congress}`);
-    return rows;
+    console.log(`Finished fetching ${bills.length} records for Congress ${congress}`);
+    return bills;
 }
+
+
+module.exports = fetchBillsFromWeb;

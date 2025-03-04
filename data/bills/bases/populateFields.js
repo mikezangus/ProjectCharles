@@ -3,14 +3,22 @@ const createRow = require("../../createRow");
 const schema = require("../schema");
 
 
-module.exports = function (src)
+function populateFields(srcBill)
 {
-    const dst = createRow(schema);
-    if (!(dst.bill_id = createBillID(src.congress,
-                                     src.type,
-                                     src.number))) return null;
-    dst.congress = src.congress;
-    dst.type = src.type;
-    dst.bill_num = src.number;
-    return dst;
+    try {
+        const dstBill = createRow(schema);
+        if (!(dstBill.bill_id = createBillID(srcBill.congress, srcBill.type, srcBill.number))) {
+            throw new Error(`Failed to create bill ID\ncongress=${srcBill.congress} | type=${srcBill.type} | bill_num=${srcBill.bill_num}`);
+        }
+        dstBill.congress = srcBill.congress;
+        dstBill.type = srcBill.type;
+        dstBill.bill_num = srcBill.number;
+        return dstBill;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
 }
+
+
+module.exports = populateFields;

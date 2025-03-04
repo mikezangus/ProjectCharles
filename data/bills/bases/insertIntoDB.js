@@ -1,6 +1,3 @@
-const printError = require("../../printError");
-
-
 async function createTable(connection)
 {
     const query = `
@@ -18,12 +15,13 @@ async function createTable(connection)
     try {
         await connection.execute(query);
     } catch (error) {
-        printError(__filename, "createTable()", error);
+        console.error(error);
+        throw error;
     }
 }
 
 
-module.exports = async function (rows, connection)
+async function insertIntoDB(rows, connection)
 {
     await createTable(connection);
     const query = `
@@ -48,8 +46,11 @@ module.exports = async function (rows, connection)
             ]);
             result.affectedRows > 0 ? affectedCount++ : ignoredCount++; 
         } catch (error) {
-            printError(__filename, null, error);
+            console.error(error);
         }
     }
     console.log(`Finished inserting ${affectedCount} rows. Ignored ${ignoredCount} rows\n`);
 }
+
+
+module.exports = insertIntoDB;

@@ -1,13 +1,13 @@
 const { spawn } = require("child_process");
+const currentCongress = require("../../currentCongress");
+const fetchBillsFromWeb = require("./fetchBillsFromWeb");
+const insertIntoDB = require("./insertIntoDB");
 const pool = require("../../db");
-const fetch = require("./fetchBillsFromWeb");
-const getCurrentCongress = require("../../getCurrentCongress");
-const insert = require("./insertIntoDB");
+const populateFields = require("./populateFields");
 
 
-const CURRENT_CONGRESS = getCurrentCongress();
-const START_CONGRESS = 113;
-const END_CONGRESS = 114;
+const START_CONGRESS = currentCongress(); // 102 is minimum, no online vote archiving pre-102
+const END_CONGRESS = currentCongress();
 
 
 async function main()
@@ -15,17 +15,27 @@ async function main()
     const caffeinate = spawn("caffeinate",
                              ["-d", "-i", "-s", "-u"],
                              { detached: false, stdio: "ignore" });
-    const connection = await pool.getConnection();
+    let connection = null;
     try {
+        connection = await pool.getConnection();
         for (let congress = START_CONGRESS; congress <= END_CONGRESS; congress++) {
-            const rows = await fetch(congress);
-            await insert(rows, connection);
+            let bills = await fetchBillsFromWeb(congress);
+            bills = bills.map(populateFields);
+            await insertIntoDB(bills, connection);
         }
+    } catch (error) {
+        console.error(error);
     } finally {
-        connection.release();
-        await pool.end();
-        caffeinate.kill("SIGTERM");
+        if (connection) {
+            connection.release();
+        }
     }
+    try {
+        await pool.end();
+    } catch (error) {
+        console.error(error);
+    }
+    caffeinate.kill("SIGTERM");
 }
 
 
