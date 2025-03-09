@@ -1,4 +1,5 @@
-function convertBillType(src) {
+function convertBillType(src)
+{
     switch (src) {
         case "HCONRES": return "house-concurrent-resolution";
         case "HJRES": return "house-joint-resolution";

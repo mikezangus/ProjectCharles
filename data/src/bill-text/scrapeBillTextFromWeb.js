@@ -45,13 +45,13 @@ async function getTextElement(webDriver, url)
             return 1;
         }
     } catch (error) {
-        console.error(error);
         return null;
     }
 }
 
 
-async function scrapeBillTextFromWeb(webDriverWrapper, url) {
+async function scrapeBillTextFromWeb(webDriverWrapper, url)
+{
     let attempts = 0;
     const maxAttempts = 5;
     while (attempts < maxAttempts) {
