@@ -1,44 +1,29 @@
+const os = require("os");
 const pool = require("../db");
 const { spawn } = require("child_process");
-const convertBillType = require("./convertBillType");
-const createWebDriver = require("./buildWebDriver");
-const createURL = require("./createURL");
 const fetchBillMetadataFromDB = require("./fetchBillMetadataFromDB");
-const fetchBillTextFromWeb = require("./fetchBillTextFromWeb");
-const saveBillTextToTxtFile = require("./saveBIllTextToTxtFile");
+const scrapeBatch = require("./processBatch");
+const splitBillMetadataIntoBatches = require("./splitArrayBatches");
 
 
 async function main() {
     const caffeinate = spawn("caffeinate",
-                                ["-d", "-i", "-s", "-u"],
-                                { detached: false, stdio: "ignore" });
-    let dbConnection = null;
-    let webDriver = null;
-    let webDriverWrapper = null;
+                             ["-d", "-i", "-s", "-u"],
+                             { detached: false, stdio: "ignore" });
+    let connection = null;
     try {
-        dbConnection = await pool.getConnection();
-        webDriver = await createWebDriver();
-        webDriverWrapper = { instance: webDriver };
-        const bills = await fetchBillMetadataFromDB(dbConnection);
-        const len = bills.length;
-        for (const [i, bill] of bills.entries()) {
-            const { congress, type, bill_num, bill_id } = bill;
-            const url = createURL(congress, convertBillType(type), bill_num);
-            console.log(`\n[${i + 1}/${len}] ${url}`);
-            const billText = await fetchBillTextFromWeb(webDriverWrapper, url);
-            if (!billText) {
-                console.log("❌");
-                continue;
-            }
-            saveBillTextToTxtFile(bill_id, billText);
-            console.log("✅");
-        }
+        connection = await pool.getConnection();
+        const billMetadata = await fetchBillMetadataFromDB(connection);
+        const coreCount = os.cpus().length;
+        console.log("Core count:", coreCount);
+        const batchCount = parseInt(Math.min(coreCount, billMetadata.length));
+        const batches = splitBillMetadataIntoBatches(billMetadata, batchCount);
+        await Promise.all(batches.map(
+            (batch, index) => scrapeBatch(batch, index)
+        ));
     } finally {
-        if (dbConnection) {
-            dbConnection.release();
-        }
-        if (webDriverWrapper.instance) {
-            await webDriverWrapper.instance.quit();
+        if (connection) {
+            connection.release();
         }
     }
     caffeinate.kill("SIGTERM");

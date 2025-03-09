@@ -1,6 +1,7 @@
 const { By, until } = require("selenium-webdriver");
-const writeLog = require("../utils/writeLog");
 const buildWebDriver = require("./buildWebDriver");
+const sludge = require("../utils/sludge");
+const writeLog = require("../utils/writeLog");
 
 
 async function findTextElement(driver)
@@ -31,24 +32,6 @@ async function findPdfElement(driver)
 }
 
 
-async function sludge(fnctn, timeout)
-{
-    try {
-        return await Promise.race([
-            fnctn(),
-            new Promise((_, reject) =>
-                setTimeout(
-                    () => reject(new Error()),
-                    timeout
-                )
-            )
-        ]);
-    } catch (error) {
-        return null;
-    }
-}
-
-
 async function getTextElement(webDriver, url)
 {
     try {
@@ -59,7 +42,6 @@ async function getTextElement(webDriver, url)
         }
         const pdfElement = await findPdfElement(webDriver);
         if (pdfElement) {
-            console.log("Only found PDF");
             return 1;
         }
     } catch (error) {
@@ -69,15 +51,15 @@ async function getTextElement(webDriver, url)
 }
 
 
-async function fetchBillTextFromWeb(webDriverWrapper, url) {
+async function scrapeBillTextFromWeb(webDriverWrapper, url) {
     let attempts = 0;
     const maxAttempts = 5;
     while (attempts < maxAttempts) {
         const webDriver = webDriverWrapper.instance;
         try {
-            await webDriver.manage().setTimeouts({ pageLoad: 15000 });
+            await webDriver.manage().setTimeouts({ pageLoad: 10000 });
         } catch (error) {
-            console.error(error);
+            writeLog(`Error: ${error} | ${url}`);
             continue;
         }
         const result = await sludge(
@@ -85,11 +67,10 @@ async function fetchBillTextFromWeb(webDriverWrapper, url) {
             10000
         );
         if (typeof result === "number" && result === 1) {
-            writeLog(`PDF only - ${url}`);
+            writeLog(`PDF only | ${url}`);
             return null;
         }
         if (!result) {
-            console.log(`Failed on attempt ${++attempts}/${maxAttempts}.`);
             await webDriver.quit();
             webDriverWrapper.instance = await buildWebDriver();
             continue;
@@ -101,4 +82,4 @@ async function fetchBillTextFromWeb(webDriverWrapper, url) {
 }
 
 
-module.exports = fetchBillTextFromWeb;
+module.exports = scrapeBillTextFromWeb;
