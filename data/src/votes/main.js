@@ -8,7 +8,7 @@ const insertIntoDB = require("./insertIntoDB");
 const pool = require("../db");
 
 
-const START_CONGRESS = 102; // 102 is minimum, no online vote archiving pre-102
+const START_CONGRESS = currentCongress(); // 102 is minimum, no online vote archiving pre-102
 const END_CONGRESS = currentCongress();
 
 

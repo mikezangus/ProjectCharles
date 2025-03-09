@@ -1,4 +1,4 @@
-const writeLog = require("./writeLog");
+const writeLog = require("../src/utils/writeLog");
 
 
 async function handleRateLimit(fetchResponse, id)

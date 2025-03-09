@@ -1,4 +1,4 @@
-const y2c = require("./years-congresses.json");
+const y2c = require("../data/years-congresses.json");
 
 
 const currentCongress = () =>

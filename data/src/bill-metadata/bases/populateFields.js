@@ -1,4 +1,4 @@
-const createBillID = require("../../createBillID");
+const createBillID = require("../../utils/createBillID");
 const createRow = require("../../createRow");
 const schema = require("../schema");
 

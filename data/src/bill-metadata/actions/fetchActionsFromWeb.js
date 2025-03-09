@@ -1,5 +1,5 @@
 const axios = require("axios");
-const { CONGRESS_API_KEY: API_KEY } = require("../../../config.json");
+const { CONGRESS_API_KEY: API_KEY } = require("../../config.json");
 const handleRateLimit = require("../../handleRateLimit");
 
 

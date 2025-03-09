@@ -1,5 +1,5 @@
 const sql = require("mysql2/promise");
-const { SQL_HOST_NAME, SQL_USER_NAME, SQL_PASSWORD } = require("../config.json");
+const { SQL_HOST_NAME, SQL_USER_NAME, SQL_PASSWORD } = require("./config.json");
 
 
 const pool = sql.createPool({

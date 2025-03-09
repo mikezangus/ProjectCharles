@@ -1,6 +1,6 @@
 const xpath = require("xpath");
-const cleanLastName = require("../cleanLastName");
-const writeLog = require("../writeLog");
+const cleanLastName = require("../utils/cleanLastName");
+const writeLog = require("../utils/writeLog");
 
 
 function extractBioInfo(voteElements, chamber)
