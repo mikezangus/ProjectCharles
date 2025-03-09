@@ -20,10 +20,11 @@ async function main() {
         webDriver = await createWebDriver();
         webDriverWrapper = { instance: webDriver };
         const bills = await fetchBillMetadataFromDB(dbConnection);
-        for (const bill of bills) {
+        const len = bills.length;
+        for (const [i, bill] of bills.entries()) {
             const { congress, type, bill_num, bill_id } = bill;
             const url = createURL(congress, convertBillType(type), bill_num);
-            console.log(`\n${url}`);
+            console.log(`\n[${i + 1}/${len}] ${url}`);
             const billText = await fetchBillTextFromWeb(webDriverWrapper, url);
             if (!billText) {
                 console.log("❌");
