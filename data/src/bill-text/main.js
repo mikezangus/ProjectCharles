@@ -1,29 +1,57 @@
 const os = require("os");
 const pool = require("../db");
 const { spawn } = require("child_process");
+const buildWebDriver = require("./buildWebDriver");
+const convertBillType = require("./convertBillType");
+const createURL = require("./createURL");
+const currentCongress = require("../currentCongress");
 const fetchBillMetadataFromDB = require("./fetchBillMetadataFromDB");
-const scrapeBatch = require("./processBatch");
-const splitBillMetadataIntoBatches = require("./splitArrayBatches");
+const saveBillTextToTxtFile = require("./saveBillTextToTxtFile");
+const scrapeBillTextFromWeb = require("./scrapeBillTextFromWeb");
 
 
-async function main() {
+const START_CONGRESS = 102;
+const END_CONGRESS = 102;
+
+
+async function main()
+{
     const caffeinate = spawn("caffeinate",
                              ["-d", "-i", "-s", "-u"],
                              { detached: false, stdio: "ignore" });
     let connection = null;
+    let webDriver = null;
+    let webDriverWrapper = null;
     try {
         connection = await pool.getConnection();
-        const billMetadata = await fetchBillMetadataFromDB(connection);
-        const coreCount = os.cpus().length;
-        console.log("Core count:", coreCount);
-        const batchCount = parseInt(Math.min(coreCount, billMetadata.length));
-        const batches = splitBillMetadataIntoBatches(billMetadata, batchCount);
-        await Promise.all(batches.map(
-            (batch, index) => scrapeBatch(batch, index)
-        ));
+        const billMetadata = await fetchBillMetadataFromDB(
+            connection,
+            START_CONGRESS,
+            END_CONGRESS
+        );
+        const len = billMetadata.length;
+        webDriver = await buildWebDriver();
+        webDriverWrapper = { instance: webDriver };
+        for (const [i, bill] of billMetadata.entries()) {
+            const { congress, type, bill_num, bill_id } = bill;
+            console.log(`\n[${i + 1}/${len}]`, bill_id);
+            const url = createURL(congress, convertBillType(type), bill_num);
+            const billText = await scrapeBillTextFromWeb(webDriverWrapper, url);
+            if (!billText) {
+                console.log("❌");
+                continue;
+            }
+            saveBillTextToTxtFile(bill_id, billText);
+            console.log("✅");
+        }
+    } catch (error) {
+        console.error(error);
     } finally {
         if (connection) {
             connection.release();
+        }
+        if (webDriverWrapper.instance) {
+            await webDriverWrapper.instance.quit();
         }
     }
     caffeinate.kill("SIGTERM");
