@@ -9,15 +9,17 @@ const saveBillTextToTxtFile = require("./saveBillTextToTxtFile");
 const scrapeBillTextFromWeb = require("./scrapeBillTextFromWeb");
 
 
-const START_CONGRESS = 102;
+const START_CONGRESS = 103;
 const END_CONGRESS = currentCongress();
 
 
 async function main()
 {
-    const caffeinate = spawn("caffeinate",
-                             ["-d", "-i", "-s", "-u"],
-                             { detached: false, stdio: "ignore" });
+    const caffeinate = spawn(
+        "caffeinate",
+        ["-d", "-i", "-s", "-u"],
+        { detached: false, stdio: "ignore" }
+    );
     let connection = null;
     let webDriver = null;
     let webDriverWrapper = null;
@@ -52,8 +54,8 @@ async function main()
         if (webDriverWrapper.instance) {
             await webDriverWrapper.instance.quit();
         }
+        caffeinate.kill("SIGTERM");
     }
-    caffeinate.kill("SIGTERM");
 }
 
 
