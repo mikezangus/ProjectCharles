@@ -35,7 +35,6 @@ async function findPdfElement(driver)
 async function getTextElement(webDriver, url)
 {
     try {
-        await webDriver.get(url);
         const textElement = await findTextElement(webDriver);
         if (textElement) {
             return textElement;
@@ -52,14 +51,18 @@ async function getTextElement(webDriver, url)
 
 async function scrapeBillTextFromWeb(webDriverWrapper, url)
 {
-    let attempts = 0;
     const maxAttempts = 5;
-    while (attempts < maxAttempts) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        if (attempt > 0) {
+            console.log(`Attempt ${attempt + 1}/${maxAttempts}`);
+        }
         const webDriver = webDriverWrapper.instance;
         try {
-            await webDriver.manage().setTimeouts({ pageLoad: 10000 });
+            await webDriver
+                .manage()
+                .setTimeouts({ pageLoad: 10000 });
+            await webDriver.get(url);
         } catch (error) {
-            writeLog(`Error: ${error} | ${url}`);
             continue;
         }
         const result = await sludge(
@@ -67,6 +70,7 @@ async function scrapeBillTextFromWeb(webDriverWrapper, url)
             10000
         );
         if (typeof result === "number" && result === 1) {
+            console.log("PDF only");
             writeLog(`PDF only | ${url}`);
             return null;
         }

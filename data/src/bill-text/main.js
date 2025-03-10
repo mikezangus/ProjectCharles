@@ -1,4 +1,3 @@
-const os = require("os");
 const pool = require("../db");
 const { spawn } = require("child_process");
 const buildWebDriver = require("./buildWebDriver");
@@ -11,7 +10,7 @@ const scrapeBillTextFromWeb = require("./scrapeBillTextFromWeb");
 
 
 const START_CONGRESS = 102;
-const END_CONGRESS = 102;
+const END_CONGRESS = currentCongress();
 
 
 async function main()
