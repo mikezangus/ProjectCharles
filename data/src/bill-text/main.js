@@ -9,7 +9,7 @@ const saveBillTextToTxtFile = require("./saveBillTextToTxtFile");
 const scrapeBillTextFromWeb = require("./scrapeBillTextFromWeb");
 
 
-const START_CONGRESS = 103;
+const START_CONGRESS = 102;
 const END_CONGRESS = currentCongress();
 
 
@@ -41,6 +41,9 @@ async function main()
             if (!billText) {
                 console.log("❌");
                 continue;
+            }
+            if (billText.includes("XML/HTML")) {
+                throw new Error("Parsed 'XML/HTML' as bill text");
             }
             saveBillTextToTxtFile(bill_id, billText);
             console.log("✅");
