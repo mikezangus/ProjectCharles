@@ -1,22 +1,23 @@
 const { By, until } = require("selenium-webdriver");
 const buildWebDriver = require("./buildWebDriver");
-const sludge = require("../utils/sludge");
 const writeLog = require("../utils/writeLog");
 
 
+const TIMEOUT = 5000;
 const PDF_ONLY = 1;
 const PAGE_DOESNT_EXIST = 2;
+const NOT_AVAILABLE = 3;
 
 
-async function findTextElement(isOriginalURL, webDriver)
+async function findTextElement(webDriver, isUrlOriginal)
 {
     const originalXpath = "/html/body/div[2]/div/main/div[2]/div[2]/div[2]/pre";
-    const versionXpath = '//*[@id="billTextContainer"]'
-    const xpath = isOriginalURL ? originalXpath : versionXpath;
+    const versionXpath = '//*[@id="billTextContainer"]';
+    const xpath = isUrlOriginal ? originalXpath : versionXpath;
     try {
         return await webDriver.wait(
             until.elementLocated(By.xpath(xpath)),
-            5000
+            TIMEOUT
         );
     } catch (error) {
         return null;
@@ -30,21 +31,7 @@ async function findPdfElement(webDriver)
     try {
         return await webDriver.wait(
             until.elementLocated(By.xpath(xpath)),
-            5000
-        );
-    } catch (error) {
-        return null;
-    }
-}
-
-
-async function findVersionElement(webDriver)
-{
-    const xpath = "/html/body/div[2]/div/main/div[2]/div[2]/div[1]/ul/li[2]/a";
-    try {
-        return await webDriver.wait(
-            until.elementLocated(By.xpath(xpath)),
-            5000
+            TIMEOUT
         );
     } catch (error) {
         return null;
@@ -58,7 +45,7 @@ async function findErrorElement(webDriver)
     try {
         const element = await webDriver.wait(
             until.elementLocated(By.xpath(xpath)),
-            5000
+            TIMEOUT
         );
         const text = await element.getText();
         if (text.includes("couldn't find")) {
@@ -71,18 +58,67 @@ async function findErrorElement(webDriver)
 }
 
 
-async function getTextElement(isOriginalURL, webDriver)
+async function findNotAvailableElement(webDriver)
 {
+    const xpath = "/html/body/div[2]/div/main/div[2]/p";
     try {
-        const result = await Promise.race([
-            findTextElement(isOriginalURL, webDriver),
-            findPdfElement(webDriver).then(result => result ? PDF_ONLY : null),
-            findErrorElement(webDriver).then(result => result ? PAGE_DOESNT_EXIST : null),
-        ]);
-        return result ?? await findVersionElement(webDriver);
+        const element = await webDriver.wait(
+            until.elementLocated(By.xpath(xpath)),
+            TIMEOUT
+        );
+        const text = await element.getText();
+        if (text.includes("not available")) {
+            return NOT_AVAILABLE;
+        }
+        return null;
     } catch (error) {
         return null;
     }
+}
+
+
+async function getTextVersionURL(webDriver)
+{
+    const xpath = "//div[@id='textSelector']//a[contains(text(),'TXT')]"
+    try {
+        const element = await webDriver.wait(
+            until.elementLocated(By.xpath(xpath)),
+            TIMEOUT
+        );
+        return await element.getAttribute("href") || null;
+    } catch (error) {
+        return null;
+    }
+}
+
+
+async function getElement(webDriver, isUrlOriginal)
+{
+    try {
+        return await Promise.race([
+            findTextElement(webDriver, isUrlOriginal),
+            findPdfElement(webDriver).then(result => result ? PDF_ONLY : null),
+            findErrorElement(webDriver).then(result => result ? PAGE_DOESNT_EXIST : null),
+            findNotAvailableElement(webDriver).then(result => result ? NOT_AVAILABLE : null),
+        ]);
+    } catch (error) {
+        return null;
+    }
+}
+
+
+async function handleCloudflare(webDriverWrapper, attempt)
+{
+    const webDriver = webDriverWrapper.instance;
+    const html = await webDriver.executeScript("return document.documentElement.outerHTML;");
+    if (!html.toLowerCase().includes("cloudflare")) {
+        return
+    }
+    await webDriverWrapper.instance.quit();
+    const cloudflareTimeout = TIMEOUT * attempt * 10
+    console.log(`⚠️ Encountered cloudflare. Waiting ${cloudflareTimeout / 1000}s`);
+    await new Promise(resolve => setTimeout(resolve, cloudflareTimeout));
+    webDriverWrapper.instance = await buildWebDriver();
 }
 
 
@@ -90,41 +126,60 @@ async function scrapeBillTextFromWeb(webDriverWrapper, url)
 {
     const maxAttempts = 5;
     let privateURL = url;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        if (attempt > 0) {
-            console.log(`Attempt ${attempt + 1}/${maxAttempts}`);
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        if (attempt > 1) {
+            console.log(`Trying attempt ${attempt}/${maxAttempts}`);
         }
         const webDriver = webDriverWrapper.instance;
         try {
             await webDriver
                 .manage()
-                .setTimeouts({ pageLoad: 10000 });
+                .setTimeouts({ pageLoad: TIMEOUT });
             await webDriver.get(privateURL);
         } catch (error) {
             continue;
         }
-        const result = await getTextElement(privateURL === url, webDriver);
+        const result = await getElement(webDriver, url === privateURL);
+        if (typeof result === "string" && result.includes("congress.gov")) {
+            privateURL = result;
+            continue;
+        }
         if (typeof result === "number" && result === PDF_ONLY) {
             console.log("PDF only");
-            writeLog(`PDF only | ${url}`);
+            writeLog(`PDF only | ${privateURL}`);
             return null;
         }
         if (typeof result === "number" && result === PAGE_DOESNT_EXIST) {
             console.log("Page doesn't exist");
-            writeLog(`Page doesn't exist | ${url}`);
+            writeLog(`Page doesn't exist | ${privateURL}`);
+            return null;
+        }
+        if (typeof result === "number" && result === NOT_AVAILABLE) {
+            console.log("Digital text not available");
+            writeLog(`Digital text not available | ${privateURL}`);
             return null;
         }
         if (!result) {
-            await webDriver.quit();
-            webDriverWrapper.instance = await buildWebDriver();
+            const textVersionURL = await getTextVersionURL(webDriver);
+            if (textVersionURL
+                && typeof textVersionURL === "string"
+                && textVersionURL.includes("congress.gov")) {
+                privateURL = textVersionURL;
+                continue;
+            }
+            await handleCloudflare(webDriverWrapper, attempt);
             continue;
         }
-        const href = await result.getAttribute("href") || null;
-        if (href && href.includes("bill/")) {
-            privateURL = href;
+        const text = await result.getText();
+        if (!text.includes("\n")) {
+            if (attempt === maxAttempts) {
+                console.log("No newline in parsed text");
+                writeLog(`No newline in parsed text | ${privateURL} | Text:\n`, text);
+                return null;;
+            }
             continue;
         }
-        return await result.getText();
+        return text;
     }
     writeLog(url);
     return null;
