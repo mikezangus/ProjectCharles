@@ -129,6 +129,8 @@ async function scrapeBillTextFromWeb(webDriverWrapper, url)
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         if (attempt > 1) {
             console.log(`Trying attempt ${attempt}/${maxAttempts}`);
+            await webDriverWrapper.instance.quit();
+            webDriverWrapper.instance = await buildWebDriver();
         }
         const webDriver = webDriverWrapper.instance;
         try {
