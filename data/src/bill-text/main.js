@@ -5,8 +5,10 @@ const convertBillType = require("./convertBillType");
 const createURL = require("./createURL");
 const currentCongress = require("../currentCongress");
 const fetchBillMetadataFromDB = require("./fetchBillMetadataFromDB");
+const getSavedBillIDs = require("./getSavedBillIDs");
 const saveBillTextToTxtFile = require("./saveBillTextToTxtFile");
 const scrapeBillTextFromWeb = require("./scrapeBillTextFromWeb");
+const writeLog = require("../utils/writeLog");
 
 
 const START_CONGRESS = 102;
@@ -30,10 +32,15 @@ async function main()
             START_CONGRESS,
             END_CONGRESS
         );
-        const len = billMetadata.length;
+        const savedBillIDs = getSavedBillIDs();
+        const bills = billMetadata.filter(
+            bill => !savedBillIDs.includes(bill.bill_id)
+        );
+        const len = bills.length;
         webDriver = await buildWebDriver();
         webDriverWrapper = { instance: webDriver };
-        for (const [i, bill] of billMetadata.entries()) {
+        writeLog(`\n${"—".repeat(50)}\nNEW RUN\n${"—".repeat(50)}`);
+        for (const [i, bill] of bills.entries()) {
             const { congress, type, bill_num, bill_id } = bill;
             console.log(`\n[${i + 1}/${len}]`, bill_id);
             const url = createURL(congress, convertBillType(type), bill_num);
@@ -41,9 +48,6 @@ async function main()
             if (!billText) {
                 console.log("❌");
                 continue;
-            }
-            if (billText.includes("XML/HTML")) {
-                throw new Error("Parsed 'XML/HTML' as bill text");
             }
             saveBillTextToTxtFile(bill_id, billText);
             console.log("✅");
@@ -54,7 +58,7 @@ async function main()
         if (connection) {
             connection.release();
         }
-        if (webDriverWrapper.instance) {
+        if (webDriverWrapper && webDriverWrapper.instance) {
             await webDriverWrapper.instance.quit();
         }
         caffeinate.kill("SIGTERM");
