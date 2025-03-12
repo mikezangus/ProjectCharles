@@ -11,9 +11,11 @@ const NOT_AVAILABLE = 3;
 
 async function findTextElement(webDriver, isUrlOriginal)
 {
+    // to do: https://www.congress.gov/bill/117th-congress/house-bill/1437/text has its original url's xpath as the text version xpath
+    // probably just do a race for both xpaths regardless of url
     const originalXpath = "/html/body/div[2]/div/main/div[2]/div[2]/div[2]/pre";
-    const versionXpath = '//*[@id="billTextContainer"]';
-    const xpath = isUrlOriginal ? originalXpath : versionXpath;
+    const textVersionXpath = '//*[@id="billTextContainer"]';
+    const xpath = isUrlOriginal ? originalXpath : textVersionXpath;
     try {
         return await webDriver.wait(
             until.elementLocated(By.xpath(xpath)),
@@ -100,6 +102,7 @@ async function getElement(webDriver, isUrlOriginal)
             findPdfElement(webDriver).then(result => result ? PDF_ONLY : null),
             findErrorElement(webDriver).then(result => result ? PAGE_DOESNT_EXIST : null),
             findNotAvailableElement(webDriver).then(result => result ? NOT_AVAILABLE : null),
+            getTextVersionURL(webDriver)
         ]);
     } catch (error) {
         return null;
@@ -127,6 +130,7 @@ async function scrapeBillTextFromWeb(webDriverWrapper, url)
     const maxAttempts = 5;
     let privateURL = url;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        console.log(privateURL);
         if (attempt > 1) {
             console.log(`Trying attempt ${attempt}/${maxAttempts}`);
             await webDriverWrapper.instance.quit();
@@ -141,45 +145,42 @@ async function scrapeBillTextFromWeb(webDriverWrapper, url)
         } catch (error) {
             continue;
         }
-        const result = await getElement(webDriver, url === privateURL);
-        if (typeof result === "string" && result.includes("congress.gov")) {
-            privateURL = result;
+        const element = await getElement(webDriver, url === privateURL);
+        if (typeof element === "string" && element.includes("congress.gov")) {
+            privateURL = element;
+            attempt--;
             continue;
         }
-        if (typeof result === "number" && result === PDF_ONLY) {
+        if (typeof element === "number" && element === PDF_ONLY) {
             console.log("PDF only");
             writeLog(`PDF only | ${privateURL}`);
             return null;
         }
-        if (typeof result === "number" && result === PAGE_DOESNT_EXIST) {
+        if (typeof element === "number" && element === PAGE_DOESNT_EXIST) {
             console.log("Page doesn't exist");
             writeLog(`Page doesn't exist | ${privateURL}`);
             return null;
         }
-        if (typeof result === "number" && result === NOT_AVAILABLE) {
+        if (typeof element === "number" && element === NOT_AVAILABLE) {
             console.log("Digital text not available");
             writeLog(`Digital text not available | ${privateURL}`);
             return null;
         }
-        if (!result) {
-            const textVersionURL = await getTextVersionURL(webDriver);
-            if (textVersionURL
-                && typeof textVersionURL === "string"
-                && textVersionURL.includes("congress.gov")) {
-                privateURL = textVersionURL;
-                continue;
-            }
+        if (!element) {
             await handleCloudflare(webDriverWrapper, attempt);
             continue;
         }
-        const text = await result.getText();
+        const text = await element.getText();
         if (!text.includes("\n")) {
             if (attempt === maxAttempts) {
                 console.log("No newline in parsed text");
                 writeLog(`No newline in parsed text | ${privateURL} | Text:\n`, text);
-                return null;;
+                return null;
             }
             continue;
+        }
+        if (text.includes("XML/HTML")) {
+            throw new Error("Parsed 'XML/HTML' as bill text");
         }
         return text;
     }
