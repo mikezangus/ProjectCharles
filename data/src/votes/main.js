@@ -27,9 +27,11 @@ async function main()
         for (const [i, bill] of bills.entries()) {
             console.log(`[${i + 1}/${len}] ${bill.bill_id}`);
             const [hVotesXml, sVotesXml] = await fetchVotesFromWeb(bill);
-            const hVotesElements = hVotesXml ? parseHouseXmlToElements(hVotesXml)
+            const hVotesElements = hVotesXml
+                ? parseHouseXmlToElements(hVotesXml)
                 : [];
-            const sVotesElements = sVotesXml ? parseSenateXmlToElements(sVotesXml)
+            const sVotesElements = sVotesXml
+                ? parseSenateXmlToElements(sVotesXml)
                 : [];
             const hVotes = hVotesElements.length > 0
                 ? await populateFieldsHouse(hVotesElements, bill.bill_id, bill.congress, connection)
