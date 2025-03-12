@@ -32,6 +32,7 @@ async function main()
             START_CONGRESS,
             END_CONGRESS
         );
+        await pool.end();
         const savedBillIDs = getSavedBillIDs();
         const bills = billMetadata.filter(
             bill => !savedBillIDs.includes(bill.bill_id)
@@ -55,9 +56,6 @@ async function main()
     } catch (error) {
         console.error(error);
     } finally {
-        if (connection) {
-            connection.release();
-        }
         if (webDriverWrapper && webDriverWrapper.instance) {
             await webDriverWrapper.instance.quit();
         }
