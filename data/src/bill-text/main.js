@@ -22,13 +22,11 @@ async function main()
         ["-d", "-i", "-s", "-u"],
         { detached: false, stdio: "ignore" }
     );
-    let connection = null;
     let webDriver = null;
     let webDriverWrapper = null;
     try {
-        connection = await pool.getConnection();
         const billMetadata = await fetchBillMetadataFromDB(
-            connection,
+            await pool.getConnection(),
             START_CONGRESS,
             END_CONGRESS
         );
