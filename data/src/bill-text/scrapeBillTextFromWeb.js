@@ -9,18 +9,21 @@ const PAGE_DOESNT_EXIST = 2;
 const NOT_AVAILABLE = 3;
 
 
-async function findTextElement(webDriver, isUrlOriginal)
+async function findTextElement(webDriver)
 {
-    // to do: https://www.congress.gov/bill/117th-congress/house-bill/1437/text has its original url's xpath as the text version xpath
-    // probably just do a race for both xpaths regardless of url
     const originalXpath = "/html/body/div[2]/div/main/div[2]/div[2]/div[2]/pre";
     const textVersionXpath = '//*[@id="billTextContainer"]';
-    const xpath = isUrlOriginal ? originalXpath : textVersionXpath;
     try {
-        return await webDriver.wait(
-            until.elementLocated(By.xpath(xpath)),
-            TIMEOUT
-        );
+        return await Promise.race([
+            webDriver.wait(
+                until.elementLocated(By.xpath(originalXpath)),
+                TIMEOUT
+            ),
+            webDriver.wait(
+                until.elementLocated(By.xpath(textVersionXpath)),
+                TIMEOUT
+            )
+        ]);
     } catch (error) {
         return null;
     }
@@ -94,11 +97,11 @@ async function getTextVersionURL(webDriver)
 }
 
 
-async function getElement(webDriver, isUrlOriginal)
+async function getElement(webDriver)
 {
     try {
         return await Promise.race([
-            findTextElement(webDriver, isUrlOriginal),
+            findTextElement(webDriver),
             findPdfElement(webDriver).then(result => result ? PDF_ONLY : null),
             findErrorElement(webDriver).then(result => result ? PAGE_DOESNT_EXIST : null),
             findNotAvailableElement(webDriver).then(result => result ? NOT_AVAILABLE : null),
