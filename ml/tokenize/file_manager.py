@@ -11,11 +11,22 @@ class FileManager:
         if extension:
             file_names = [f for f in file_names if f.endswith(extension)]
         return sorted(file_names)
+    
+    @staticmethod
+    def load_tokens_from_txt_file(path: str) -> list[str]:
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"File not found at path: {path}")
+        if not path.endswith(".txt"):
+            raise ValueError(f"File path is not to .txt file: {path}")
+        with open(path, "r", encoding="utf-8") as file:
+            return file.read().split()
 
     @staticmethod
     def load_txt_file(path: str) -> str:
-        if not os.path.exists(path):
+        if not os.path.isfile(path):
             raise FileNotFoundError(f"File not found at path: {path}")
+        if not path.endswith(".txt"):
+            raise ValueError(f"File path is not to .txt file: {path}")
         with open(path, "r", encoding="utf-8") as file:
             return file.read()
     
