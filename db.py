@@ -1,19 +1,23 @@
 import json
 import mysql.connector
+import os
 from mysql.connector.connection import MySQLConnection
 
 
 class DB:
 
-    def __init__(self, config_path):
-        self.config = self._load_config(config_path)
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    config_path = os.path.join(current_dir, "config.json")
+
+    def __init__(self):
+        self.config = self._load_config()
         self.connection: MySQLConnection = None
 
-    def _load_config(self, config_path: str) -> dict[str, str]:
-        with open(config_path, "r") as config_file:
+    def _load_config(self) -> dict[str, str]:
+        with open(self.config_path, 'r') as config_file:
             return json.load(config_file)
     
-    def connect(self):
+    def _connect(self) -> None:
         if self.connection is None or not self.connection.is_connected():
             try:
                 self.connection = mysql.connector.connect(
@@ -26,8 +30,8 @@ class DB:
                 print("Error connecting to DB:\n", e)
                 self.connection = None
     
-    def query(self, query: str, params: tuple = None):
-        self.connect()
+    def query(self, query: str, params: tuple = None) -> list[dict]:
+        self._connect()
         try:
             with self.connection.cursor(dictionary=True) as cursor:
                 cursor.execute(query, params or ())
@@ -36,8 +40,8 @@ class DB:
             print("Query error:\n", e)
             return []
     
-    def execute(self, query: str, params: tuple | list = None):
-        self.connect()
+    def execute(self, query: str, params: tuple | list = None) -> None:
+        self._connect()
         try:
             with self.connection.cursor() as cursor:
                 cursor.execute(query, params or ())
@@ -46,7 +50,7 @@ class DB:
             print("Execution error:\n", e)
             self.connection.rollback()
 
-    def close(self):
+    def close(self) -> None:
         if self.connection and self.connection.is_connected():
             self.connection.close()
             self.connection = None

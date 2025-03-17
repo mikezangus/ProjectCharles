@@ -16,9 +16,9 @@ class FileManager:
         return sorted(file_names)
     
     @staticmethod
-    def load_tokens_from_txt_file(path: str) -> list[str]:
+    def load_tokens_from_file(path: str) -> list[str]:
         if not os.path.isfile(path):
-            raise FileNotFoundError(f"File not found at path: {path}")
+            raise FileNotFoundError(f"File not found at path:{path}")
         if not path.endswith(".txt"):
             raise ValueError(f"File path is not to .txt file: {path}")
         with open(path, "r", encoding="utf-8") as file:
@@ -32,6 +32,15 @@ class FileManager:
             raise ValueError(f"File path is not to .txt file: {path}")
         with open(path, "r", encoding="utf-8") as file:
             return file.read()
+        
+    @staticmethod
+    def load_json_file(path: str) -> dict:
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"File not found at path: {path}")
+        if not path.endswith(".json"):
+            raise ValueError(f"File path is not to .json file: {path}")
+        with open(path, 'r', encoding="utf-8") as file:
+            return json.load(file)
     
     @staticmethod
     def save_dict_to_file(path: str, content: dict):
@@ -48,3 +57,11 @@ class FileManager:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as file:
             file.write(" ".join(content))
+
+    @staticmethod
+    def get_file_names_by_len(dir: str, descending = True) -> list:
+        if not os.path.exists(dir):
+            raise FileNotFoundError(f"Dir not found: {dir}")
+        file_names = os.listdir(dir)
+        sorted_file_names = sorted(file_names, key=len, reverse=descending)
+        return sorted_file_names
